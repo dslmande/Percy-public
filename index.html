@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Percy 3D-Montage</title>
+<style>
+:root {
+  --bg: #f3f2ee;
+  --flaeche: #ffffff;
+  --flaeche2: #eceae4;
+  --flaeche3: #e2e0d9;
+  --text: #1c1c1f;
+  --text2: #5d5d64;
+  --linie: #d8d6ce;
+  --akzent: #d4500f;
+  --akzent-text: #ffffff;
+  --akzent-weich: #fbe3d4;
+  --blau: #1f74c9;
+  --ok: #2b8a3e;
+  --warn: #c76a00;
+  --fehler: #c92a2a;
+  --buehne: #e7e6e1;
+  --buehne-glanz: #f6f5f1;
+  --schatten: 0 2px 10px rgba(0, 0, 0, .12);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131315;
+    --flaeche: #1b1b1e;
+    --flaeche2: #25252a;
+    --flaeche3: #2e2e34;
+    --text: #ececf0;
+    --text2: #a3a3ad;
+    --linie: #34343b;
+    --akzent: #ff8a3d;
+    --akzent-text: #1b1b1e;
+    --akzent-weich: #3d2516;
+    --blau: #5aa9f0;
+    --ok: #51c46b;
+    --warn: #f0a33a;
+    --fehler: #ff6b6b;
+    --buehne: #1a1b1f;
+    --buehne-glanz: #24252b;
+    --schatten: 0 2px 12px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131315;
+  --flaeche: #1b1b1e;
+  --flaeche2: #25252a;
+  --flaeche3: #2e2e34;
+  --text: #ececf0;
+  --text2: #a3a3ad;
+  --linie: #34343b;
+  --akzent: #ff8a3d;
+  --akzent-text: #1b1b1e;
+  --akzent-weich: #3d2516;
+  --blau: #5aa9f0;
+  --ok: #51c46b;
+  --warn: #f0a33a;
+  --fehler: #ff6b6b;
+  --buehne: #1a1b1f;
+  --buehne-glanz: #24252b;
+  --schatten: 0 2px 12px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.kopf {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: 1px solid var(--linie); background: var(--flaeche);
+}
+.kopf h1 { font-size: 17px; margin: 0; letter-spacing: .01em; }
+.kopf .unter { color: var(--text2); font-size: 12.5px; min-width: 0; }
+.kopf .rechts { margin-left: auto; display: flex; gap: 8px; }
+.knopf {
+  border: 1px solid var(--linie); background: var(--flaeche); border-radius: 8px;
+  padding: 6px 10px; line-height: 1.2; white-space: nowrap;
+}
+.knopf:hover { background: var(--flaeche2); }
+.knopf:focus-visible, .tab:focus-visible, input:focus-visible { outline: 2px solid var(--blau); outline-offset: 1px; }
+.knopf.an { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); font-weight: 600; }
+.knopf:disabled { opacity: .45; cursor: default; }
+.layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 390px;
+  height: calc(100vh - 54px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - 54px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+.buehne { position: relative; min-width: 0; min-height: 0; background: radial-gradient(ellipse at 50% 35%, var(--buehne-glanz), var(--buehne) 70%); overflow: hidden; }
+.buehne canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+.leiste {
+  position: absolute; left: 10px; right: 10px; top: 10px;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; pointer-events: none;
+}
+.leiste > * { pointer-events: auto; }
+.gruppe-knoepfe { display: flex; flex-wrap: wrap; gap: 4px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; padding: 4px; box-shadow: var(--schatten); }
+.gruppe-knoepfe .knopf { border: 0; padding: 5px 8px; font-size: 13px; }
+.regler {
+  display: flex; align-items: center; gap: 8px; background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: 10px; padding: 4px 10px; box-shadow: var(--schatten); font-size: 13px; min-width: 0;
+}
+.regler input[type=range] { width: 130px; accent-color: var(--akzent); }
+.regler label { display: flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; }
+.regler input[type=checkbox] { accent-color: var(--akzent); }
+.status {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 14px 18px;
+  box-shadow: var(--schatten); text-align: center; max-width: calc(100% - 32px);
+}
+.status .balken { height: 6px; background: var(--flaeche2); border-radius: 3px; margin-top: 8px; overflow: hidden; width: 220px; max-width: 100%; }
+.status .balken div { height: 100%; width: 0; background: var(--akzent); transition: width .2s; }
+.achsen { position: absolute; left: 12px; bottom: 10px; font-size: 11.5px; color: var(--text2); pointer-events: none; }
+.karte {
+  position: absolute; right: 10px; bottom: 10px; width: 360px; max-width: calc(100% - 20px); max-height: 55%;
+  overflow: auto; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px;
+  box-shadow: var(--schatten); padding: 12px 14px; font-size: 13px;
+}
+.karte h3 { margin: 0 26px 4px 0; font-size: 15px; }
+.karte .zu { position: absolute; right: 8px; top: 8px; border: 0; background: none; font-size: 18px; line-height: 1; padding: 4px; color: var(--text2); }
+.karte dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; margin: 6px 0; }
+.karte dt { color: var(--text2); }
+.karte dd { margin: 0; overflow-wrap: anywhere; }
+.karte .hinweis { background: var(--flaeche2); border-radius: 8px; padding: 7px 9px; margin: 8px 0; }
+.karte .zeile { display: flex; gap: 6px; flex-wrap: wrap; }
+.mess-label {
+  position: absolute; transform: translate(-50%, -120%); background: var(--blau); color: #fff;
+  font-size: 12px; padding: 2px 7px; border-radius: 6px; pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.hinweisleiste {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: var(--blau); color: #fff;
+  border-radius: 8px; padding: 5px 10px; font-size: 12.5px; pointer-events: none; max-width: calc(100% - 32px); text-align: center;
+}
+.panel { border-left: 1px solid var(--linie); background: var(--flaeche); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.tabs { display: flex; border-bottom: 1px solid var(--linie); }
+.tab {
+  flex: 1; border: 0; background: none; padding: 10px 4px; font-size: 13.5px; color: var(--text2);
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 600; }
+.tabinhalt { flex: 1; overflow: auto; padding: 12px 16px 24px; min-height: 0; }
+.tabinhalt[hidden] { display: none; }
+.klein { font-size: 12.5px; color: var(--text2); }
+.suche { width: 100%; padding: 7px 10px; border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche2); margin: 4px 0 10px; }
+.baum { list-style: none; margin: 0; padding: 0; }
+.baum ul { list-style: none; margin: 0; padding: 0 0 0 18px; }
+.knoten { display: flex; align-items: center; gap: 6px; padding: 2px 0; min-width: 0; }
+.knoten .auf { width: 20px; height: 20px; border: 0; background: none; padding: 0; color: var(--text2); flex: none; border-radius: 4px; }
+.knoten .auf:hover { background: var(--flaeche2); }
+.knoten input { accent-color: var(--akzent); flex: none; margin: 0; }
+.knoten .name { border: 0; background: none; padding: 2px 4px; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; flex: 1; }
+.knoten .name:hover { background: var(--flaeche2); }
+.knoten .name.gewaehlt { background: var(--akzent-weich); }
+.knoten .zahl { color: var(--text2); font-size: 12px; flex: none; }
+.knoten.g > .name { font-weight: 600; }
+.schritte-punkte { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 12px; }
+.schritte-punkte button {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--linie); background: var(--flaeche2);
+  font-size: 11.5px; padding: 0; font-variant-numeric: tabular-nums;
+}
+.schritte-punkte button.fertig { background: var(--flaeche3); }
+.schritte-punkte button.aktiv { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); font-weight: 700; }
+.schritt h2 { font-size: 16px; margin: 4px 0 6px; }
+.schritt .nr { color: var(--akzent); font-weight: 700; font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; }
+.schritt dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; margin: 10px 0; }
+.schritt dt { color: var(--text2); }
+.schritt dd { margin: 0; }
+.schritt ul { margin: 6px 0; padding-left: 18px; }
+.zeile { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.zeile.voll > .knopf { flex: 1; }
+.feld { margin: 10px 0 14px; padding: 10px 12px; border: 1px solid var(--linie); border-radius: 10px; }
+.feld h3 { margin: 0 0 6px; font-size: 14px; }
+.schnitt-zeile { display: grid; grid-template-columns: 92px minmax(0, 1fr) 62px; gap: 8px; align-items: center; margin: 8px 0; }
+.schnitt-zeile label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.schnitt-zeile input[type=range] { width: 100%; accent-color: var(--akzent); }
+.schnitt-zeile output { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.liste { list-style: none; margin: 6px 0; padding: 0; }
+.liste li { border-bottom: 1px solid var(--linie); }
+.liste button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 7px 4px; }
+.liste button:hover { background: var(--flaeche2); }
+.liste .wert { float: right; font-variant-numeric: tabular-nums; margin-left: 8px; }
+.marke { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 9px; margin-left: 6px; vertical-align: 1px; }
+.marke.anlage { background: var(--flaeche3); color: var(--text2); }
+.marke.eng { background: var(--akzent-weich); color: var(--akzent); }
+.marke.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.zusammenfassung { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; }
+.zahlfeld { flex: 1; min-width: 90px; background: var(--flaeche2); border-radius: 10px; padding: 8px 10px; }
+.zahlfeld b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.zahlfeld.gut b { color: var(--ok); }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .buehne { height: 64vh; height: 64svh; min-height: 360px; }
+  .panel { border-left: 0; border-top: 1px solid var(--linie); }
+  .tabinhalt { overflow: visible; padding: 12px 16px 32px; }
+  .kopf .unter { flex-basis: 100%; order: 3; }
+  .regler input[type=range] { width: 96px; }
+  .karte { left: 10px; right: 10px; width: auto; max-height: 48%; }
+  .achsen { display: none; }
+}
+@media (max-width: 420px) {
+  .leiste { left: 6px; right: 6px; top: 6px; gap: 4px; }
+  .gruppe-knoepfe .knopf { padding: 4px 6px; font-size: 12px; }
+  .regler { padding: 3px 8px; font-size: 12px; }
+}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<header class="kopf" lang="de">
+  <h1>Percy 3D-Montage</h1>
+  <span class="unter" id="unterzeile">Gehäuse Rev0.3 · Rückwand Rev0.3 · Hauptplatine Rev0.7 · Frontplatte Rev0.7</span>
+  <div class="rechts">
+    <button class="knopf" id="thema" type="button" aria-label="Farbschema wechseln">Auto</button>
+  </div>
+</header>
+<main class="layout" lang="de">
+  <section class="buehne" id="buehne" aria-label="3D-Ansicht">
+    <canvas id="leinwand" tabindex="0" aria-label="3D-Modell, mit Maus oder Fingern drehen und zoomen"></canvas>
+    <div class="leiste">
+      <div class="gruppe-knoepfe" role="group" aria-label="Ansichten">
+        <button class="knopf" type="button" data-ansicht="iso">Iso</button>
+        <button class="knopf" type="button" data-ansicht="vorn">Vorn</button>
+        <button class="knopf" type="button" data-ansicht="hinten">Hinten</button>
+        <button class="knopf" type="button" data-ansicht="oben">Oben</button>
+        <button class="knopf" type="button" data-ansicht="unten">Unten</button>
+        <button class="knopf" type="button" data-ansicht="links">Links</button>
+        <button class="knopf" type="button" data-ansicht="rechts">Rechts</button>
+      </div>
+      <div class="regler">
+        <label for="explosion">Zerlegen</label>
+        <input type="range" id="explosion" min="0" max="100" value="0" aria-label="Explosionsgrad">
+      </div>
+      <div class="regler">
+        <label><input type="checkbox" id="wanneDurch"> Wanne durchsichtig</label>
+        <label><input type="checkbox" id="messen"> Messen</label>
+      </div>
+    </div>
+    <div class="status" id="status">Modelle laden …<div class="balken"><div id="ladebalken"></div></div></div>
+    <div class="achsen">x → rechts · y → vorn · z ↑ (mm, Platinenkoordinaten)</div>
+    <div id="labels"></div>
+    <div class="hinweisleiste" id="hinweisleiste" hidden></div>
+    <div class="karte" id="karte" hidden></div>
+  </section>
+  <aside class="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-teile" aria-controls="p-teile" aria-selected="true">Teile</button>
+      <button class="tab" role="tab" id="tab-montage" aria-controls="p-montage" aria-selected="false">Montage</button>
+      <button class="tab" role="tab" id="tab-schnitt" aria-controls="p-schnitt" aria-selected="false">Schnitt &amp; Maß</button>
+      <button class="tab" role="tab" id="tab-pruefung" aria-controls="p-pruefung" aria-selected="false">Prüfung</button>
+    </div>
+    <div class="tabinhalt" id="p-teile" role="tabpanel" aria-labelledby="tab-teile">
+      <p class="klein" id="teile-info">Klick auf ein Teil (Liste oder Modell) zeigt Name, Maße und Hinweis. Häkchen blenden ein und aus.</p>
+      <input class="suche" id="suche" type="search" placeholder="Suchen: R419, Bolzen, MH5, Knopf …" aria-label="Teile suchen">
+      <div class="zeile" style="margin-bottom:8px">
+        <button class="knopf" type="button" id="alleAn">Alle zeigen</button>
+        <button class="knopf" type="button" id="nurGehaeuse">Nur Gehäuse + Befestigung</button>
+        <button class="knopf" type="button" id="fokusAus" hidden>Fokus aufheben</button>
+      </div>
+      <ul class="baum" id="baum"></ul>
+    </div>
+    <div class="tabinhalt" id="p-montage" role="tabpanel" aria-labelledby="tab-montage" hidden>
+      <div class="schritte-punkte" id="punkte" aria-label="Montageschritte"></div>
+      <div class="zeile voll">
+        <button class="knopf" type="button" id="zurueck">◀ Zurück</button>
+        <button class="knopf" type="button" id="nochmal">↻ Nochmal</button>
+        <button class="knopf haupt" type="button" id="weiter">Weiter ▶</button>
+      </div>
+      <div class="schritt" id="schritt"></div>
+      <div class="zeile" style="margin-top:8px">
+        <label class="klein"><input type="checkbox" id="kameraMit" checked> Ansicht je Schritt mitführen</label>
+        <label class="klein"><input type="checkbox" id="neuHell" checked> Neue Teile hervorheben</label>
+      </div>
+      <div class="zeile" style="margin-top:10px">
+        <button class="knopf" type="button" id="abspielen">▶ Alle Schritte abspielen</button>
+        <button class="knopf" type="button" id="montageEnde">Montage beenden</button>
+      </div>
+      <p class="klein">Quelle: gehaeuse/README.md, Abschnitt Montagefolge; als „Ergänzung“ markierte Schritte stammen aus docs/BEDIENTEILE.md bzw. sind Vorschläge.</p>
+    </div>
+    <div class="tabinhalt" id="p-schnitt" role="tabpanel" aria-labelledby="tab-schnitt" hidden>
+      <div class="feld">
+        <h3>Schnittebenen</h3>
+        <p class="klein">Lage in Platinenkoordinaten. „Seite“ wechselt, welche Hälfte stehen bleibt. Schnittflächen der Gehäuseteile und Hüllkörper erscheinen orange.</p>
+        <div id="schnitte"></div>
+        <button class="knopf" type="button" id="schnittAus">Alle Schnitte aus</button>
+      </div>
+      <div class="feld">
+        <h3>Messen Punkt–Punkt</h3>
+        <p class="klein">„Messen“ einschalten (oben in der Ansicht oder hier), dann zwei Punkte auf Teilen anklicken. Gemessen wird in der aktuellen Lage – zum Messen am fertigen Gerät „Zerlegen“ auf 0 stellen.</p>
+        <div class="zeile">
+          <button class="knopf" type="button" id="messenKnopf">Messen ein</button>
+          <button class="knopf" type="button" id="messLoeschen">Messungen löschen</button>
+        </div>
+        <ul class="liste" id="messliste"></ul>
+      </div>
+    </div>
+    <div class="tabinhalt" id="p-pruefung" role="tabpanel" aria-labelledby="tab-pruefung" hidden>
+      <div id="pruefkopf"></div>
+      <ul class="liste" id="pruefliste"></ul>
+    </div>
+  </aside>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = (s) => document.querySelector(s);
+const zahl = (v, n = 1) => Number(v).toLocaleString('de-DE', { minimumFractionDigits: n, maximumFractionDigits: n });
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const speicher = {
+  lies(k) { try { return localStorage.getItem('percy3d.' + k); } catch (e) { return null; } },
+  schreib(k, v) { try { localStorage.setItem('percy3d.' + k, v); } catch (e) { /* egal */ } },
+};
+
+// ------------------------------------------------------------------ Farbschema
+const themen = ['auto', 'light', 'dark'];
+const themaName = { auto: 'Auto', light: 'Hell', dark: 'Dunkel' };
+let thema = speicher.lies('thema') || 'auto';
+function setzeThema(t) {
+  thema = t;
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  $('#thema').textContent = 'Farbe: ' + themaName[t];
+  speicher.schreib('thema', t);
+  neuZeichnen();
+}
+$('#thema').addEventListener('click', () => setzeThema(themen[(themen.indexOf(thema) + 1) % 3]));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => neuZeichnen());
+
+// ------------------------------------------------------------------ Szene
+const leinwand = $('#leinwand');
+const buehne = $('#buehne');
+const renderer = new THREE.WebGLRenderer({ canvas: leinwand, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.localClippingEnabled = true;
+renderer.setClearColor(0x000000, 0);
+const szene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+szene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+szene.add(new THREE.HemisphereLight(0xffffff, 0x444450, 0.35));
+const sonne = new THREE.DirectionalLight(0xffffff, 1.1);
+sonne.position.set(150, 400, 260);
+szene.add(sonne);
+const kamera = new THREE.PerspectiveCamera(30, 1, 2, 6000);
+kamera.position.set(260, 300, 420);
+const steuerung = new OrbitControls(kamera, leinwand);
+steuerung.enableDamping = true;
+steuerung.dampingFactor = 0.12;
+steuerung.screenSpacePanning = true;
+steuerung.minDistance = 15;
+steuerung.maxDistance = 2500;
+steuerung.addEventListener('change', () => neuZeichnen());
+const modell = new THREE.Group();
+szene.add(modell);
+const hilfen = new THREE.Group();
+szene.add(hilfen);
+
+let MITTE = [165, 7.5, 87];
+const welt = (x, y, z) => new THREE.Vector3(x - MITTE[0], z - MITTE[1], y - MITTE[2]);
+const platine = (v) => [v.x + MITTE[0], v.z + MITTE[2], v.y + MITTE[1]];
+
+// ------------------------------------------------------------------ Zustand
+let D = null;
+const T = new Map();          // id -> Teil
+const schrittIndex = {};      // schritt-id -> Index
+const zustand = {
+  modus: 'frei', explosion: 0, schritt: 0, anim: null, wanneDurch: false, messen: false,
+  gewaehlt: null, fokus: null, nutzer: {}, kameraMit: true, neuHell: true, autoplay: null,
+};
+const ebenen = [];            // aktive Schnittebenen (gemeinsames Array aller Materialien)
+const SCHNITT = {
+  x: { name: 'x (quer)', min: -8, max: 338, wert: 165, an: false, seite: 1 },
+  y: { name: 'y (Tiefe)', min: -5, max: 178, wert: 52, an: false, seite: 1 },
+  z: { name: 'z (Höhe)', min: -22, max: 33, wert: 8, an: false, seite: 1 },
+};
+const schnittEbene = { x: new THREE.Plane(), y: new THREE.Plane(), z: new THREE.Plane() };
+
+let zeichnen = true;
+function neuZeichnen() { zeichnen = true; }
+
+// ------------------------------------------------------------------ Laden
+async function laden() {
+  D = await (await fetch('percy.json')).json();
+  MITTE = D.mitte;
+  modell.position.set(-MITTE[0], -MITTE[1], -MITTE[2]);
+  $('#unterzeile').textContent = `Gehäuse ${D.quellen.gehaeuse.replace('Percy-Gehaeuse ', '')} · Rückwand ${D.quellen.rueckwand.replace('Percy-Rueckwand ', '')} · Hauptplatine ${D.quellen.hauptplatine} · Frontplatte ${D.quellen.frontplatte.replace('Percy-Front_', '')}`;
+  D.schritte.forEach((s, i) => { schrittIndex[s.id] = i; });
+  for (const t of D.teile) {
+    T.set(t.id, { info: t, obj: null, meshes: [], expl: new THREE.Vector3(...(t.expl || [0, 0, 0])),
+      schritt: t.schritt != null ? schrittIndex[t.schritt] : null, neu: false, ziel: new THREE.Vector3() });
+    zustand.nutzer[t.id] = !t.start_aus;
+  }
+  const lader = new GLTFLoader();
+  const gesamt = Object.values(D.groessen).reduce((a, b) => a + b, 0);
+  const geladen = {};
+  const zeige = () => {
+    const s = Object.values(geladen).reduce((a, b) => a + b, 0);
+    $('#ladebalken').style.width = Math.min(100, 100 * s / gesamt).toFixed(0) + '%';
+  };
+  // Modelle als .glb direkt (GitHub Pages liefert sie aus)
+  async function ladeGlb(f) {
+    const res = await fetch(f);
+    if (!res.ok) throw new Error(f + ': ' + res.status);
+    const leser = res.body.getReader();
+    const stuecke = [];
+    let n = 0;
+    for (;;) {
+      const { done, value } = await leser.read();
+      if (done) break;
+      stuecke.push(value); n += value.length;
+      geladen[f] = n; zeige();
+    }
+    const buf = new Uint8Array(n); let o = 0;
+    for (const s of stuecke) { buf.set(s, o); o += s.length; }
+    return new Promise((ok, fehler) => lader.parse(buf.buffer, f.replace(/[^/]*$/, ''), ok, fehler));
+  }
+  const dateien = await Promise.all(D.dateien.map((f) => ladeGlb(f)));
+  for (const g of dateien) {
+    for (const knoten of [...g.scene.children]) {
+      const id = knoten.userData.id || knoten.name;
+      const t = T.get(id);
+      if (!t) continue;
+      t.obj = knoten;
+      modell.add(knoten);
+      knoten.traverse((m) => {
+        if (!m.isMesh) return;
+        m.material = m.material.clone();
+        const mat = m.material;
+        mat.side = THREE.DoubleSide;
+        mat.envMapIntensity = mat.map ? 0.3 : (mat.metalness > 0.5 ? 1.0 : 0.3);
+        mat.clippingPlanes = ebenen;
+        mat.userData.basis = { farbe: mat.color.clone(), opacity: mat.opacity };
+        if (schnittfarbe(t.info)) {
+          mat.userData.uSchnitt = { value: 0 };
+          mat.onBeforeCompile = (sh) => {
+            sh.uniforms.uSchnitt = mat.userData.uSchnitt;
+            sh.fragmentShader = 'uniform float uSchnitt;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
+              '#include <dithering_fragment>\n  if (!gl_FrontFacing && uSchnitt > 0.5) gl_FragColor = vec4(0.93, 0.42, 0.12, 1.0);');
+          };
+          mat.customProgramCacheKey = () => 'percy-schnitt';
+        }
+        m.userData.teil = id;
+        t.meshes.push(m);
+      });
+    }
+  }
+  $('#status').hidden = true;
+  baumBauen();
+  schnittBauen();
+  pruefungBauen();
+  punkteBauen();
+  allesAnwenden();
+  ansicht('iso', false);
+}
+const schnittfarbe = (i) => ['gehaeuse', 'befestigung'].includes(i.datei) || /^(huelle_|bed_|knopf_)/.test(i.id);
+
+// ------------------------------------------------------------------ Sichtbarkeit, Lage, Aussehen
+function montageSichtbar(t) {
+  if (t.schritt == null) return false;
+  const s = D.schritte[zustand.schritt];
+  if (t.schritt > zustand.schritt) return false;
+  if (s.ohne && s.ohne.includes(t.info.schritt)) return false;
+  return true;
+}
+function sichtbar(t) {
+  if (!zustand.nutzer[t.info.id]) return false;
+  return zustand.modus === 'frei' || montageSichtbar(t);
+}
+function lageBerechnen(t, a) {
+  // a: Fortschritt der Schrittanimation (0 … 1)
+  if (zustand.modus === 'frei') return t.ziel.copy(t.expl).multiplyScalar(zustand.explosion);
+  const s = D.schritte[zustand.schritt];
+  t.ziel.set(0, 0, 0);
+  const rest = 1 - a;
+  if (rest <= 0) return t.ziel;
+  if (t.schritt === zustand.schritt) {
+    const v = t.expl.lengthSq() > 0 ? t.expl : new THREE.Vector3(0, 60, 0);
+    return t.ziel.copy(v).multiplyScalar(rest);
+  }
+  if (s.bewegen && s.bewegen.includes(t.info.schritt)) return t.ziel.set(...s.von).multiplyScalar(rest);
+  return t.ziel;
+}
+const leicht = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function lagenAnwenden(a = 1) {
+  for (const t of T.values()) if (t.obj) t.obj.position.copy(lageBerechnen(t, a));
+  neuZeichnen();
+}
+const AKZENT = new THREE.Color(0xff7a1a);
+const NEU = new THREE.Color(0x2f8cff);
+function aussehen(t) {
+  const id = t.info.id;
+  const gew = zustand.gewaehlt === id;
+  const imFokus = !zustand.fokus || zustand.fokus.has(id);
+  const istWanne = id === 'wanne';
+  const frei = id.startsWith('frei_');
+  const schnittAn = ebenen.length > 0;
+  for (const m of t.meshes) {
+    const mat = m.material;
+    let op = mat.userData.basis.opacity;
+    if (istWanne && zustand.wanneDurch) op = 0.18;
+    if (frei) op = 0.38;
+    if (!imFokus) op = Math.min(op, 0.07);
+    if (zustand.fokus && zustand.fokus.size > 1 && imFokus && (istWanne || id === 'rueckwand')) op = Math.min(op, 0.45);
+    mat.transparent = op < 0.999;
+    mat.opacity = op;
+    mat.depthWrite = op > 0.5;
+    if (gew) { mat.emissive.copy(AKZENT); mat.emissiveIntensity = 0.55; }
+    else if (zustand.modus === 'montage' && zustand.neuHell && t.neu) { mat.emissive.copy(NEU); mat.emissiveIntensity = 0.35; }
+    else if (zustand.fokus && zustand.fokus.has(id)) { mat.emissive.copy(AKZENT); mat.emissiveIntensity = 0.12; }
+    else { mat.emissive.setRGB(0, 0, 0); mat.emissiveIntensity = 1; }
+    if (mat.userData.uSchnitt) mat.userData.uSchnitt.value = schnittAn && op > 0.5 ? 1 : 0;
+    m.renderOrder = op < 0.999 ? 2 : 0;
+  }
+}
+function allesAnwenden(a = 1) {
+  for (const t of T.values()) {
+    if (!t.obj) continue;
+    t.neu = zustand.modus === 'montage' && t.schritt === zustand.schritt;
+    t.obj.visible = sichtbar(t);
+    aussehen(t);
+  }
+  lagenAnwenden(a);
+  baumHaken();
+}
+
+// ------------------------------------------------------------------ Kamera
+let flug = null;
+const RICHTUNG = {
+  iso: [0.62, 0.62, 0.92], vorn: [0, 0.0001, 1], hinten: [0, 0.0001, -1], oben: [0, 1, 0.0001],
+  unten: [0, -1, 0.0001], links: [-1, 0.0001, 0], rechts: [1, 0.0001, 0], ffc: [0.55, 0.35, -0.75],
+  schnitt: [1, 0.32, 0.5],
+};
+function sichtbareBox(ids) {
+  const box = new THREE.Box3();
+  const b = new THREE.Box3();
+  for (const t of T.values()) {
+    if (!t.obj || !t.obj.visible) continue;
+    if (ids && !ids.includes(t.info.id)) continue;
+    b.setFromObject(t.obj);
+    box.union(b);
+  }
+  // nur der Teil, der nach den Schnitten stehen bleibt
+  for (const [a, s] of Object.entries(SCHNITT)) {
+    if (!s.an || box.isEmpty()) continue;
+    const k = { x: 'x', y: 'z', z: 'y' }[a];
+    const w = s.wert - MITTE[{ x: 0, y: 2, z: 1 }[a]];
+    if (s.seite > 0) box.max[k] = Math.max(box.min[k] + 1, Math.min(box.max[k], w));
+    else box.min[k] = Math.min(box.max[k] - 1, Math.max(box.min[k], w));
+  }
+  return box;
+}
+function abstandFuer(radius, faktor = 1.04) {
+  const vf = THREE.MathUtils.degToRad(kamera.fov);
+  const hf = 2 * Math.atan(Math.tan(vf / 2) * kamera.aspect);
+  return radius / Math.sin(Math.min(vf, hf) / 2) * faktor;
+}
+function fliegeZu(ziel, pos, dauer = 650) {
+  if (!dauer) { steuerung.target.copy(ziel); kamera.position.copy(pos); steuerung.update(); neuZeichnen(); return; }
+  flug = { t0: performance.now(), dauer, z0: steuerung.target.clone(), p0: kamera.position.clone(), z1: ziel.clone(), p1: pos.clone() };
+}
+function ansicht(name, animiert = true, ids = null) {
+  const box = sichtbareBox(ids);
+  if (box.isEmpty()) box.setFromCenterAndSize(new THREE.Vector3(), new THREE.Vector3(340, 40, 180));
+  const kugel = box.getBoundingSphere(new THREE.Sphere());
+  let mitte = kugel.center;
+  let r = kugel.radius;
+  if (name === 'ffc') { const f = T.get('ffc'); if (f && f.obj) { const b = new THREE.Box3().setFromObject(f.obj); b.translate(f.obj.position.clone().negate()); mitte = b.getCenter(new THREE.Vector3()); r = 60; } }
+  const d = new THREE.Vector3(...RICHTUNG[name]).normalize();
+  const faktor = { iso: 0.82, schnitt: 0.8, ffc: 1.0 }[name] || 1.04;
+  fliegeZu(mitte, mitte.clone().add(d.multiplyScalar(abstandFuer(r, faktor))), animiert ? 650 : 0);
+}
+function zoomeAuf(ids, minR = 12) {
+  const box = sichtbareBox(ids);
+  if (box.isEmpty()) return;
+  const k = box.getBoundingSphere(new THREE.Sphere());
+  const r = Math.max(k.radius * 1.6, minR);
+  const dir = kamera.position.clone().sub(steuerung.target).normalize();
+  fliegeZu(k.center, k.center.clone().add(dir.multiplyScalar(abstandFuer(r))));
+}
+document.querySelectorAll('[data-ansicht]').forEach((b) => b.addEventListener('click', () => ansicht(b.dataset.ansicht)));
+
+// ------------------------------------------------------------------ Teilebaum
+const gruppen = new Map();
+function baumBauen() {
+  const baum = new Map();
+  for (const t of D.teile) {
+    if (!baum.has(t.gruppe)) baum.set(t.gruppe, new Map());
+    const g = baum.get(t.gruppe);
+    if (!g.has(t.untergruppe)) g.set(t.untergruppe, []);
+    g.get(t.untergruppe).push(t);
+  }
+  const ul = $('#baum');
+  ul.innerHTML = '';
+  for (const [gname, ugs] of baum) {
+    const ids = [...ugs.values()].flat().map((t) => t.id);
+    const li = knoten(gname, ids, true);
+    const unter = document.createElement('ul');
+    for (const [ugname, liste] of ugs) {
+      const einzel = ugs.size === 1 && liste.length === 1;
+      if (einzel) { li.dataset.einzel = liste[0].id; continue; }
+      const uli = knoten(ugname, liste.map((t) => t.id), false);
+      const ul3 = document.createElement('ul');
+      ul3.hidden = true;
+      for (const t of liste) ul3.appendChild(blatt(t));
+      uli.appendChild(ul3);
+      unter.appendChild(uli);
+    }
+    if (!li.dataset.einzel) li.appendChild(unter);
+    else li.querySelector('.auf').style.visibility = 'hidden';
+    unter.hidden = gname.startsWith('Freiräume');
+    ul.appendChild(li);
+  }
+}
+function knoten(name, ids, istGruppe) {
+  const li = document.createElement('li');
+  const z = document.createElement('div');
+  z.className = 'knoten' + (istGruppe ? ' g' : '');
+  z.innerHTML = `<button class="auf" type="button" aria-label="auf- oder zuklappen">${istGruppe ? '▾' : '▸'}</button>` +
+    `<input type="checkbox" aria-label="${esc(name)} ein- oder ausblenden"><button class="name" type="button">${esc(name)}</button><span class="zahl">${ids.length}</span>`;
+  li.appendChild(z);
+  const cb = z.querySelector('input');
+  gruppen.set(cb, ids);
+  cb.addEventListener('change', () => { for (const id of ids) zustand.nutzer[id] = cb.checked; allesAnwenden(); });
+  z.querySelector('.auf').addEventListener('click', (e) => {
+    const sub = li.querySelector(':scope > ul');
+    if (!sub) return;
+    sub.hidden = !sub.hidden;
+    e.currentTarget.textContent = sub.hidden ? '▸' : '▾';
+  });
+  z.querySelector('.name').addEventListener('click', () => {
+    if (li.dataset.einzel) { waehle(li.dataset.einzel, true); return; }
+    const sub = li.querySelector(':scope > ul');
+    if (sub) { sub.hidden = !sub.hidden; z.querySelector('.auf').textContent = sub.hidden ? '▸' : '▾'; }
+  });
+  return li;
+}
+function blatt(t) {
+  const li = document.createElement('li');
+  li.dataset.id = t.id;
+  li.dataset.such = (t.name + ' ' + (t.bezeichner || '') + ' ' + (t.wert || '') + ' ' + t.untergruppe).toLowerCase();
+  li.innerHTML = `<div class="knoten"><span style="width:20px"></span><input type="checkbox" aria-label="${esc(t.name)} ein- oder ausblenden"><button class="name" type="button" title="${esc(t.name)}">${esc(t.name)}</button></div>`;
+  const cb = li.querySelector('input');
+  gruppen.set(cb, [t.id]);
+  cb.addEventListener('change', () => { zustand.nutzer[t.id] = cb.checked; allesAnwenden(); });
+  li.querySelector('.name').addEventListener('click', () => waehle(t.id, true));
+  li.querySelector('.name').addEventListener('dblclick', () => zoomeAuf([t.id]));
+  return li;
+}
+function baumHaken() {
+  for (const [cb, ids] of gruppen) {
+    const an = ids.filter((id) => zustand.nutzer[id]).length;
+    cb.checked = an === ids.length;
+    cb.indeterminate = an > 0 && an < ids.length;
+  }
+  document.querySelectorAll('#baum .name.gewaehlt').forEach((e) => e.classList.remove('gewaehlt'));
+  if (zustand.gewaehlt) {
+    const li = document.querySelector(`#baum li[data-id="${CSS.escape(zustand.gewaehlt)}"] .name`);
+    if (li) li.classList.add('gewaehlt');
+  }
+}
+$('#suche').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll('#baum li[data-id]').forEach((li) => { li.hidden = q && !li.dataset.such.includes(q); });
+  document.querySelectorAll('#baum ul ul').forEach((ul) => {
+    if (q) ul.hidden = ![...ul.children].some((c) => !c.hidden);
+  });
+  document.querySelectorAll('#baum > li > ul > li').forEach((li) => {
+    const sub = li.querySelector('ul');
+    li.hidden = q && sub && [...sub.children].every((c) => c.hidden);
+  });
+});
+$('#alleAn').addEventListener('click', () => { for (const t of D.teile) zustand.nutzer[t.id] = !t.start_aus; fokusAus(); allesAnwenden(); });
+$('#nurGehaeuse').addEventListener('click', () => {
+  for (const t of D.teile) zustand.nutzer[t.id] = ['Gehäuse', 'Befestigung'].includes(t.gruppe);
+  allesAnwenden();
+});
+$('#fokusAus').addEventListener('click', () => fokusAus());
+function fokusAus() { zustand.fokus = null; $('#fokusAus').hidden = true; for (const t of T.values()) aussehen(t); neuZeichnen(); }
+
+// ------------------------------------------------------------------ Auswahl und Infokarte
+function waehle(id, ausListe = false) {
+  zustand.gewaehlt = id;
+  for (const t of T.values()) aussehen(t);
+  baumHaken();
+  karteZeigen(id);
+  if (ausListe) {
+    const t = T.get(id);
+    if (t && !t.obj.visible) { zustand.nutzer[id] = true; allesAnwenden(); }
+  }
+  neuZeichnen();
+}
+function karteZeigen(id) {
+  const k = $('#karte');
+  if (!id) { k.hidden = true; return; }
+  const i = T.get(id).info;
+  const m = i.masse;
+  const b = i.box;
+  const reihe = (n, w) => (w ? `<dt>${n}</dt><dd>${w}</dd>` : '');
+  k.innerHTML = `<button class="zu" type="button" aria-label="Schließen">×</button><h3>${esc(i.name)}</h3>
+    <div class="klein">${esc(i.gruppe)} › ${esc(i.untergruppe)}</div>
+    <dl>${reihe('Bezeichner', esc(i.bezeichner))}${reihe('Wert', esc(i.wert))}${reihe('Footprint', esc(i.footprint))}
+    ${reihe('Seite', esc(i.seite))}
+    <dt>Maße</dt><dd>${zahl(m[0], 2)} × ${zahl(m[1], 2)} × ${zahl(m[2], 2)} mm <span class="klein">(x × y × z)</span></dd>
+    <dt>Lage</dt><dd>x ${zahl(b[0])} … ${zahl(b[3])}, y ${zahl(b[1])} … ${zahl(b[4])}, z ${zahl(b[2])} … ${zahl(b[5])}</dd>
+    ${reihe('Montage', i.schritt ? 'Schritt ' + (schrittIndex[i.schritt] + 1) + ': ' + esc(D.schritte[schrittIndex[i.schritt]].titel) : 'kein Montageschritt')}
+    </dl>${i.hinweis ? `<div class="hinweis">${esc(i.hinweis)}</div>` : ''}
+    <div class="zeile"><button class="knopf" type="button" data-a="zoom">Hinzoomen</button>
+    <button class="knopf" type="button" data-a="nur">Nur dieses</button>
+    <button class="knopf" type="button" data-a="aus">Ausblenden</button></div>`;
+  k.hidden = false;
+  k.querySelector('.zu').onclick = () => { zustand.gewaehlt = null; k.hidden = true; for (const t of T.values()) aussehen(t); baumHaken(); neuZeichnen(); };
+  k.querySelector('[data-a=zoom]').onclick = () => zoomeAuf([id]);
+  k.querySelector('[data-a=aus]').onclick = () => { zustand.nutzer[id] = false; allesAnwenden(); };
+  k.querySelector('[data-a=nur]').onclick = () => { setzeFokus([id]); zoomeAuf([id]); };
+}
+function setzeFokus(ids) {
+  zustand.fokus = new Set(ids);
+  $('#fokusAus').hidden = false;
+  for (const id of ids) if (!zustand.nutzer[id]) zustand.nutzer[id] = true;
+  allesAnwenden();
+}
+
+// ------------------------------------------------------------------ Zeiger: Auswahl und Messen
+const strahl = new THREE.Raycaster();
+let druck = null;
+leinwand.addEventListener('pointerdown', (e) => { druck = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+leinwand.addEventListener('pointerup', (e) => {
+  if (!druck) return;
+  const weg = Math.hypot(e.clientX - druck.x, e.clientY - druck.y);
+  const dauer = performance.now() - druck.t;
+  druck = null;
+  if (weg > 6 || dauer > 600) return;
+  const treffer = triff(e);
+  if (zustand.messen) { if (treffer) messPunkt(treffer.point); return; }
+  if (treffer) waehle(treffer.object.userData.teil);
+  else { zustand.gewaehlt = null; karteZeigen(null); for (const t of T.values()) aussehen(t); baumHaken(); neuZeichnen(); }
+});
+leinwand.addEventListener('dblclick', (e) => { const t = triff(e); if (t) zoomeAuf([t.object.userData.teil]); });
+function triff(e) {
+  const r = leinwand.getBoundingClientRect();
+  const p = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  strahl.setFromCamera(p, kamera);
+  const ziele = [];
+  for (const t of T.values()) {
+    if (!t.obj || !t.obj.visible) continue;
+    if (t.info.id === 'wanne' && zustand.wanneDurch) continue;
+    if (t.info.id.startsWith('frei_')) continue;
+    if (zustand.fokus && !zustand.fokus.has(t.info.id)) continue;
+    ziele.push(...t.meshes);
+  }
+  const hits = strahl.intersectObjects(ziele, false);
+  for (const h of hits) if (ebenen.every((pl) => pl.distanceToPoint(h.point) >= -0.01)) return h;
+  return null;
+}
+let messStart = null;
+const messungen = [];
+const punktGeo = new THREE.SphereGeometry(1, 16, 12);
+const punktMat = new THREE.MeshBasicMaterial({ color: 0x1f74c9, depthTest: false });
+const linieMat = new THREE.LineBasicMaterial({ color: 0x1f74c9, depthTest: false });
+function messPunkt(p) {
+  const kugel = new THREE.Mesh(punktGeo, punktMat);
+  kugel.position.copy(p);
+  kugel.renderOrder = 10;
+  kugel.userData.punkt = true;
+  hilfen.add(kugel);
+  if (!messStart) { messStart = { p: p.clone(), kugel }; hinweis('Zweiten Punkt anklicken'); neuZeichnen(); return; }
+  const a = messStart.p;
+  const b = p.clone();
+  const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+  const linie = new THREE.Line(geo, linieMat);
+  linie.renderOrder = 10;
+  hilfen.add(linie);
+  const lab = document.createElement('div');
+  lab.className = 'mess-label';
+  const d = a.distanceTo(b);
+  lab.textContent = zahl(d, 2) + ' mm';
+  $('#labels').appendChild(lab);
+  const pa = platine(a);
+  const pb = platine(b);
+  messungen.push({ a, b, d, lab, objekte: [messStart.kugel, kugel, linie], dx: pb[0] - pa[0], dy: pb[1] - pa[1], dz: pb[2] - pa[2] });
+  messStart = null;
+  hinweis('Erster Punkt der nächsten Messung – oder „Messen“ ausschalten');
+  messListe();
+  neuZeichnen();
+}
+function messListe() {
+  $('#messliste').innerHTML = messungen.map((m, i) => `<li><button type="button" data-i="${i}">Messung ${i + 1}<span class="wert">${zahl(m.d, 2)} mm</span><br><span class="klein">Δx ${zahl(m.dx, 2)} · Δy ${zahl(m.dy, 2)} · Δz ${zahl(m.dz, 2)}</span></button></li>`).join('');
+}
+function messLoeschen() {
+  for (const m of messungen) { m.objekte.forEach((o) => hilfen.remove(o)); m.lab.remove(); }
+  messungen.length = 0;
+  if (messStart) { hilfen.remove(messStart.kugel); messStart = null; }
+  messListe();
+  neuZeichnen();
+}
+function setzeMessen(an) {
+  zustand.messen = an;
+  $('#messen').checked = an;
+  $('#messenKnopf').textContent = an ? 'Messen aus' : 'Messen ein';
+  $('#messenKnopf').classList.toggle('an', an);
+  leinwand.style.cursor = an ? 'crosshair' : '';
+  hinweis(an ? 'Ersten Punkt anklicken' : null);
+  if (!an && messStart) { hilfen.remove(messStart.kugel); messStart = null; neuZeichnen(); }
+}
+function hinweis(text) { const h = $('#hinweisleiste'); h.hidden = !text; if (text) h.textContent = text; }
+$('#messen').addEventListener('change', (e) => setzeMessen(e.target.checked));
+$('#messenKnopf').addEventListener('click', () => setzeMessen(!zustand.messen));
+$('#messLoeschen').addEventListener('click', messLoeschen);
+function labelsSetzen() {
+  const r = leinwand.getBoundingClientRect();
+  const s = 1;
+  for (const m of messungen) {
+    const p = m.a.clone().add(m.b).multiplyScalar(0.5).project(kamera);
+    m.lab.style.left = ((p.x + 1) / 2 * r.width) + 'px';
+    m.lab.style.top = ((1 - p.y) / 2 * r.height) + 'px';
+    m.lab.hidden = p.z > 1;
+  }
+  // Punktgröße an den Abstand anpassen (≈ 4 px)
+  const pro = 2 * Math.tan(THREE.MathUtils.degToRad(kamera.fov) / 2) / r.height;
+  hilfen.children.forEach((o) => { if (o.userData.punkt) o.scale.setScalar(Math.max(0.15, o.position.distanceTo(kamera.position) * pro * 4 * s)); });
+}
+
+// ------------------------------------------------------------------ Schnitt
+function schnittBauen() {
+  const box = $('#schnitte');
+  box.innerHTML = '';
+  for (const [a, s] of Object.entries(SCHNITT)) {
+    const z = document.createElement('div');
+    z.className = 'schnitt-zeile';
+    z.innerHTML = `<label><input type="checkbox" ${s.an ? 'checked' : ''}> ${s.name}</label>
+      <input type="range" min="${s.min}" max="${s.max}" step="0.1" value="${s.wert}" aria-label="Lage der Schnittebene ${a}">
+      <output>${zahl(s.wert)}</output>`;
+    const [cb, rg, out] = [z.querySelector('input[type=checkbox]'), z.querySelector('input[type=range]'), z.querySelector('output')];
+    cb.addEventListener('change', () => { s.an = cb.checked; schnittAnwenden(); });
+    rg.addEventListener('input', () => { s.wert = +rg.value; out.textContent = zahl(s.wert); if (!s.an) { s.an = true; cb.checked = true; } schnittAnwenden(); });
+    const seite = document.createElement('button');
+    seite.className = 'knopf';
+    seite.type = 'button';
+    seite.textContent = 'Seite ⇄';
+    seite.style.gridColumn = '1 / span 3';
+    seite.style.justifySelf = 'start';
+    seite.style.padding = '2px 8px';
+    seite.style.fontSize = '12px';
+    seite.addEventListener('click', () => { s.seite *= -1; if (!s.an) { s.an = true; cb.checked = true; } schnittAnwenden(); });
+    z.appendChild(seite);
+    s.ui = { cb, rg, out };
+    box.appendChild(z);
+  }
+}
+function schnittAnwenden() {
+  ebenen.length = 0;
+  for (const [a, s] of Object.entries(SCHNITT)) {
+    if (!s.an) continue;
+    const pl = schnittEbene[a];
+    // behalten: Seite 1 -> Koordinate ≤ Wert
+    if (a === 'x') pl.set(new THREE.Vector3(-s.seite, 0, 0), s.seite * (s.wert - MITTE[0]));
+    if (a === 'y') pl.set(new THREE.Vector3(0, 0, -s.seite), s.seite * (s.wert - MITTE[2]));
+    if (a === 'z') pl.set(new THREE.Vector3(0, -s.seite, 0), s.seite * (s.wert - MITTE[1]));
+    ebenen.push(pl);
+  }
+  for (const t of T.values()) aussehen(t);
+  neuZeichnen();
+}
+function setzeSchnitt(achse, wert, an = true, seite = 1) {
+  const s = SCHNITT[achse];
+  s.an = an; s.wert = wert; s.seite = seite;
+  if (s.ui) { s.ui.cb.checked = an; s.ui.rg.value = wert; s.ui.out.textContent = zahl(wert); }
+  schnittAnwenden();
+}
+$('#schnittAus').addEventListener('click', () => { for (const a of Object.keys(SCHNITT)) setzeSchnitt(a, SCHNITT[a].wert, false); });
+
+// ------------------------------------------------------------------ Explosion und Wanne
+$('#explosion').addEventListener('input', (e) => {
+  if (zustand.modus !== 'frei') montageBeenden(false);
+  zustand.explosion = e.target.value / 100;
+  lagenAnwenden();
+});
+$('#wanneDurch').addEventListener('change', (e) => { zustand.wanneDurch = e.target.checked; aussehen(T.get('wanne')); neuZeichnen(); });
+
+// ------------------------------------------------------------------ Montage
+function punkteBauen() {
+  $('#punkte').innerHTML = D.schritte.map((s, i) => `<button type="button" data-i="${i}" title="${esc(s.titel)}" aria-label="Schritt ${i + 1}: ${esc(s.titel)}">${i + 1}</button>`).join('');
+  $('#punkte').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => geheZuSchritt(+b.dataset.i)));
+}
+function schrittText() {
+  const s = D.schritte[zustand.schritt];
+  const teile = s.teile.map((id) => T.get(id).info);
+  const zaehl = {};
+  for (const t of teile) zaehl[t.untergruppe] = (zaehl[t.untergruppe] || 0) + 1;
+  const liste = Object.entries(zaehl).map(([n, k]) => `<li>${k} × ${esc(n)}</li>`).join('');
+  $('#schritt').innerHTML = `<div class="nr">Schritt ${s.nr} von ${D.schritte.length}</div><h2>${esc(s.titel)}</h2><p>${esc(s.text)}</p>
+    <dl><dt>Werkzeug</dt><dd>${esc(s.werkzeug)}</dd><dt>Material</dt><dd>${esc(s.material)}</dd></dl>
+    ${liste ? `<div class="klein">Im Modell neu:</div><ul>${liste}</ul>` : '<p class="klein">Keine neuen Teile – die Einheit wird bewegt.</p>'}`;
+  $('#punkte').querySelectorAll('button').forEach((b, i) => {
+    b.classList.toggle('aktiv', i === zustand.schritt);
+    b.classList.toggle('fertig', i < zustand.schritt);
+  });
+  $('#zurueck').disabled = zustand.schritt === 0;
+  $('#weiter').disabled = zustand.schritt === D.schritte.length - 1;
+}
+function geheZuSchritt(i, animiert = true) {
+  zustand.modus = 'montage';
+  zustand.schritt = Math.max(0, Math.min(D.schritte.length - 1, i));
+  $('#explosion').value = 0;
+  zustand.explosion = 0;
+  schrittText();
+  allesAnwenden(animiert ? 0 : 1);
+  zustand.anim = animiert ? { t0: performance.now(), dauer: 1300 } : null;
+  const s = D.schritte[zustand.schritt];
+  if (zustand.kameraMit && s.ansicht) ansicht(s.ansicht, animiert);
+}
+function montageBeenden(neu = true) {
+  zustand.modus = 'frei';
+  zustand.anim = null;
+  stoppeAutoplay();
+  if (neu) { allesAnwenden(); }
+  else { for (const t of T.values()) { if (t.obj) { t.neu = false; t.obj.visible = sichtbar(t); aussehen(t); } } }
+}
+$('#weiter').addEventListener('click', () => geheZuSchritt(zustand.schritt + 1));
+$('#zurueck').addEventListener('click', () => geheZuSchritt(zustand.schritt - 1));
+$('#nochmal').addEventListener('click', () => geheZuSchritt(zustand.schritt));
+$('#montageEnde').addEventListener('click', () => { montageBeenden(); tabWahl('teile'); });
+$('#kameraMit').addEventListener('change', (e) => { zustand.kameraMit = e.target.checked; });
+$('#neuHell').addEventListener('change', (e) => { zustand.neuHell = e.target.checked; for (const t of T.values()) aussehen(t); neuZeichnen(); });
+function stoppeAutoplay() { if (zustand.autoplay) { clearInterval(zustand.autoplay); zustand.autoplay = null; $('#abspielen').textContent = '▶ Alle Schritte abspielen'; } }
+$('#abspielen').addEventListener('click', () => {
+  if (zustand.autoplay) { stoppeAutoplay(); return; }
+  geheZuSchritt(0);
+  $('#abspielen').textContent = '■ Anhalten';
+  zustand.autoplay = setInterval(() => {
+    if (zustand.schritt >= D.schritte.length - 1) { stoppeAutoplay(); return; }
+    geheZuSchritt(zustand.schritt + 1);
+  }, 3200);
+});
+
+// ------------------------------------------------------------------ Prüfung
+function pruefungBauen() {
+  const p = D.pruefung;
+  $('#pruefkopf').innerHTML = `<div class="zusammenfassung">
+      <div class="zahlfeld ${p.befunde ? '' : 'gut'}"><span class="klein">Befunde</span><b>${p.befunde}</b></div>
+      <div class="zahlfeld"><span class="klein">geprüfte Körper</span><b>${p.koerper}</b></div>
+      <div class="zahlfeld"><span class="klein">Bett 345: Rand je Seite</span><b>${zahl(p.masse.rand_je_seite)} mm</b></div></div>
+    <p class="klein">Maschinelle Kollisionsprüfung des ${esc(D.quellen.gehaeuse)} (Wanne und Rückwand gegen ${esc(p.platine)} + ${esc(p.frontplatte)}, Bauteile, Hüllkörper, Befestigung, Freiräume für Schraubendreher und Stecker). Darunter die kleinsten Abstände; 0 = gewollte Anlage. Klick zeigt die Stelle.</p>`;
+  const zeilen = p.liste.map((e, i) => {
+    const marke = e.art === 'befund' ? `<span class="marke eng">${esc(e.text)}</span>` :
+      e.abstand === 0 ? '<span class="marke anlage">Anlage</span>' : e.abstand < 0.3 ? '<span class="marke eng">eng</span>' : '<span class="marke ok">Luft</span>';
+    const w = e.art === 'befund' ? (e.volumen != null ? zahl(e.volumen, 3) + ' mm³' : '') : zahl(e.abstand, 3) + ' mm';
+    return `<li><button type="button" data-i="${i}"><span class="wert">${w}</span>${esc(e.a)} ↔ ${esc(e.b)}${marke}</button></li>`;
+  });
+  $('#pruefliste').innerHTML = (p.befunde ? '' : '<li class="klein" style="padding:6px 0">Keine Kollision, kein versperrter Zugang.</li>') + zeilen.join('');
+  $('#pruefliste').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => zeigePruefung(+b.dataset.i)));
+}
+function zeigePruefung(i) {
+  const e = D.pruefung.liste[i];
+  if (zustand.modus !== 'frei') montageBeenden();
+  zustand.explosion = 0;
+  $('#explosion').value = 0;
+  const ids = [e.a_id, e.b_id].filter(Boolean);
+  for (const id of ids) zustand.nutzer[id] = true;
+  setzeFokus(ids);
+  lagenAnwenden();
+  zustand.gewaehlt = e.b_id;
+  karteZeigen(e.b_id);
+  for (const t of T.values()) aussehen(t);
+  if (e.ort) {
+    const ziel = welt(...e.ort);
+    const kleiner = ids.map((id) => T.get(id).info.masse).map((m) => Math.max(...m)).sort((a, b) => a - b)[0] || 20;
+    const r = Math.min(Math.max(kleiner * 1.5, 14), 220);
+    const seitlich = ziel.clone().setY(0);
+    const dir = (seitlich.lengthSq() > 1 ? seitlich.normalize().multiplyScalar(0.75) : new THREE.Vector3(0.4, 0, 0.6))
+      .add(new THREE.Vector3(0.15, ziel.y < -8 ? -0.6 : 0.75, 0.1)).normalize();
+    fliegeZu(ziel, ziel.clone().add(dir.multiplyScalar(abstandFuer(r))));
+  }
+}
+
+// ------------------------------------------------------------------ Tabs
+function tabWahl(name) {
+  for (const n of ['teile', 'montage', 'schnitt', 'pruefung']) {
+    $('#tab-' + n).setAttribute('aria-selected', n === name ? 'true' : 'false');
+    $('#p-' + n).hidden = n !== name;
+  }
+  speicher.schreib('tab', name);
+  if (name === 'montage' && zustand.modus !== 'montage' && D) geheZuSchritt(zustand.schritt);
+}
+for (const n of ['teile', 'montage', 'schnitt', 'pruefung']) $('#tab-' + n).addEventListener('click', () => tabWahl(n));
+
+// ------------------------------------------------------------------ Darstellung
+function groesse() {
+  const r = buehne.getBoundingClientRect();
+  const w = Math.max(1, Math.floor(r.width));
+  const h = Math.max(1, Math.floor(r.height));
+  renderer.setSize(w, h, false);
+  kamera.aspect = w / h;
+  kamera.updateProjectionMatrix();
+  neuZeichnen();
+}
+new ResizeObserver(groesse).observe(buehne);
+function bild(jetzt) {
+  requestAnimationFrame(bild);
+  if (flug) {
+    const a = Math.min(1, (jetzt - flug.t0) / flug.dauer);
+    const k = leicht(a);
+    steuerung.target.lerpVectors(flug.z0, flug.z1, k);
+    kamera.position.lerpVectors(flug.p0, flug.p1, k);
+    if (a >= 1) flug = null;
+    zeichnen = true;
+  }
+  if (zustand.anim) {
+    const a = Math.min(1, (jetzt - zustand.anim.t0) / zustand.anim.dauer);
+    lagenAnwenden(leicht(a));
+    if (a >= 1) zustand.anim = null;
+  }
+  if (steuerung.update()) zeichnen = true;
+  if (!zeichnen) return;
+  zeichnen = false;
+  renderer.render(szene, kamera);
+  labelsSetzen();
+}
+requestAnimationFrame(bild);
+
+// Schnittstelle für Tests und Vorschaubilder
+window.percy = {
+  bereit: false,
+  ansicht, geheZuSchritt, setzeSchnitt, tabWahl, waehle, zeigePruefung, montageBeenden,
+  explosion(t) { if (zustand.modus !== 'frei') montageBeenden(); zustand.explosion = t; $('#explosion').value = t * 100; lagenAnwenden(); },
+  wanneDurch(an) { $('#wanneDurch').checked = an; zustand.wanneDurch = an; aussehen(T.get('wanne')); neuZeichnen(); },
+  fertig() { return !flug && !zustand.anim; },
+  bild() { renderer.render(szene, kamera); return leinwand.toDataURL('image/png'); },
+  async aufnahme(w, h, name) {
+    // Bild in fester Größe (für Vorschaubilder), danach wieder an die Bühne anpassen
+    renderer.setPixelRatio(1);
+    renderer.setSize(w, h, false);
+    kamera.aspect = w / h;
+    kamera.updateProjectionMatrix();
+    if (name) ansicht(name, false);
+    steuerung.update();
+    szene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--buehne').trim());
+    renderer.render(szene, kamera);
+    const blob = await new Promise((r) => leinwand.toBlob(r, 'image/png'));
+    szene.background = null;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    groesse();
+    return blob.size;
+  },
+  teile: () => T.size,
+};
+
+const gemerkt = speicher.lies('tab');
+setzeThema(thema);
+laden().then(() => {
+  window.percy.bereit = true;
+  if (gemerkt && gemerkt !== 'montage') tabWahl(gemerkt);
+}).catch((err) => {
+  console.error(err);
+  $('#status').innerHTML = 'Modelle konnten nicht geladen werden.<br><span class="klein">' + esc(err.message) + '</span>';
+});
+</script>
+
+</html>
